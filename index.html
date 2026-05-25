@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>活動報到系統</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+</head>
+<body>
+<!-- 登入遮罩 -->
+<div id="loginOverlay" class="login-overlay">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="logo-icon">✦</div>
+      <h1 id="eventTitle">活動報到系統</h1>
+      <p id="eventSubtitle">Event Check-in System</p>
+    </div>
+    <div class="login-form">
+      <div class="input-group">
+        <label>工作人員姓名</label>
+        <input type="text" id="staffName" placeholder="請輸入您的姓名" autocomplete="off">
+      </div>
+      <div class="input-group">
+        <label>存取密碼</label>
+        <input type="password" id="staffPassword" placeholder="請輸入工作人員密碼">
+      </div>
+      <button class="btn-login" onclick="handleLogin()">
+        <span>進入報到系統</span>
+        <span class="btn-arrow">→</span>
+      </button>
+      <p class="login-hint" id="loginError"></p>
+    </div>
+  </div>
+</div>
+
+<!-- 主應用程式 -->
+<div id="app" class="app hidden">
+  <!-- 頂部導航 -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="header-logo">✦</div>
+      <div class="header-info">
+        <span id="headerEventName" class="header-event">活動名稱</span>
+        <span id="headerStaffName" class="header-staff">工作人員</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="checkin-counter">
+        <span class="counter-num" id="headerCount">0</span>
+        <span class="counter-label">已報到</span>
+      </div>
+      <button class="btn-logout" onclick="handleLogout()">登出</button>
+    </div>
+  </header>
+
+  <!-- 底部導航 -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" onclick="switchTab('scan')" data-tab="scan">
+      <span class="nav-icon">⬡</span>
+      <span class="nav-label">掃碼</span>
+    </button>
+    <button class="nav-btn" onclick="switchTab('manual')" data-tab="manual">
+      <span class="nav-icon">◈</span>
+      <span class="nav-label">手動</span>
+    </button>
+    <button class="nav-btn" onclick="switchTab('dashboard')" data-tab="dashboard">
+      <span class="nav-icon">◎</span>
+      <span class="nav-label">統計</span>
+    </button>
+    <button class="nav-btn" onclick="switchTab('log')" data-tab="log">
+      <span class="nav-icon">≡</span>
+      <span class="nav-label">紀錄</span>
+    </button>
+  </nav>
+
+  <!-- 主內容區 -->
+  <main class="main-content">
+
+    <!-- ===== TAB 1: QR掃碼 ===== -->
+    <section id="tab-scan" class="tab-content active">
+      <div class="scanner-wrapper">
+        <div class="scanner-header">
+          <h2>QR Code 掃碼報到</h2>
+          <p class="scanner-hint">對準來賓 QR Code 進行掃描</p>
+        </div>
+
+        <div class="scanner-container">
+          <div id="qr-reader"></div>
+          <div class="scanner-overlay">
+            <div class="scan-corner tl"></div>
+            <div class="scan-corner tr"></div>
+            <div class="scan-corner bl"></div>
+            <div class="scan-corner br"></div>
+            <div class="scan-line"></div>
+          </div>
+        </div>
+
+        <div class="scanner-controls">
+          <button id="btnStartScan" class="btn-primary" onclick="startScanner()">
+            <span>▶ 啟動掃描</span>
+          </button>
+          <button id="btnStopScan" class="btn-secondary hidden" onclick="stopScanner()">
+            <span>■ 停止掃描</span>
+          </button>
+        </div>
+
+        <!-- 掃描結果卡片 -->
+        <div id="scanResult" class="result-card hidden">
+          <div class="result-status-bar" id="resultStatusBar"></div>
+          <div class="result-content">
+            <div class="result-avatar" id="resultAvatar">王</div>
+            <div class="result-info">
+              <h3 id="resultName">—</h3>
+              <p id="resultCompany">—</p>
+              <p id="resultTitle">—</p>
+              <div class="result-tags">
+                <span class="tag tag-session" id="resultSession">—</span>
+                <span class="tag tag-id" id="resultId">—</span>
+              </div>
+            </div>
+          </div>
+          <div class="result-status" id="resultStatusMsg"></div>
+          <div class="result-actions" id="resultActions"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== TAB 2: 手動搜尋 ===== -->
+    <section id="tab-manual" class="tab-content">
+      <div class="manual-wrapper">
+        <div class="search-header">
+          <h2>手動搜尋報到</h2>
+        </div>
+
+        <div class="search-bar-group">
+          <div class="search-input-wrap">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="searchInput"
+              placeholder="輸入姓名、手機、Email 或序號..."
+              oninput="debounceSearch(this.value)"
+              autocomplete="off">
+            <button class="search-clear" onclick="clearSearch()">✕</button>
+          </div>
+          <div class="search-tabs">
+            <button class="search-tab active" data-field="all" onclick="setSearchField(this,'all')">全部</button>
+            <button class="search-tab" data-field="name" onclick="setSearchField(this,'name')">姓名</button>
+            <button class="search-tab" data-field="mobile" onclick="setSearchField(this,'mobile')">手機</button>
+            <button class="search-tab" data-field="email" onclick="setSearchField(this,'email')">Email</button>
+            <button class="search-tab" data-field="id" onclick="setSearchField(this,'id')">序號</button>
+          </div>
+        </div>
+
+        <div id="searchResults" class="search-results">
+          <div class="search-empty">
+            <div class="empty-icon">◎</div>
+            <p>輸入關鍵字開始搜尋</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== TAB 3: Dashboard ===== -->
+    <section id="tab-dashboard" class="tab-content">
+      <div class="dashboard-wrapper">
+        <div class="dash-header">
+          <h2>即時統計</h2>
+          <button class="btn-refresh" onclick="loadDashboard()">↻ 更新</button>
+        </div>
+
+        <!-- 主要統計數字 -->
+        <div class="stats-grid">
+          <div class="stat-card stat-total">
+            <div class="stat-number" id="statTotal">—</div>
+            <div class="stat-label">總報名人數</div>
+          </div>
+          <div class="stat-card stat-checked">
+            <div class="stat-number" id="statChecked">—</div>
+            <div class="stat-label">已報到</div>
+          </div>
+          <div class="stat-card stat-pending">
+            <div class="stat-number" id="statPending">—</div>
+            <div class="stat-label">尚未報到</div>
+          </div>
+          <div class="stat-card stat-rate">
+            <div class="stat-number" id="statRate">—%</div>
+            <div class="stat-label">報到率</div>
+          </div>
+        </div>
+
+        <!-- 進度條 -->
+        <div class="progress-section">
+          <div class="progress-label">
+            <span>報到進度</span>
+            <span id="progressText">0 / 0</span>
+          </div>
+          <div class="progress-bar-wrap">
+            <div class="progress-bar-fill" id="progressBar" style="width:0%"></div>
+          </div>
+        </div>
+
+        <!-- 場次統計 -->
+        <div class="session-stats">
+          <h3>各場次統計</h3>
+          <div id="sessionList" class="session-list">
+            <div class="loading-spinner">載入中...</div>
+          </div>
+        </div>
+
+        <!-- 身分別統計 -->
+        <div class="identity-stats">
+          <h3>身分別統計</h3>
+          <div id="identityList" class="identity-list">
+            <div class="loading-spinner">載入中...</div>
+          </div>
+        </div>
+
+        <!-- 時段報到曲線 (簡易版) -->
+        <div class="timeline-stats">
+          <h3>今日報到時段分布</h3>
+          <div id="timelineChart" class="timeline-chart"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== TAB 4: 報到紀錄 ===== -->
+    <section id="tab-log" class="tab-content">
+      <div class="log-wrapper">
+        <div class="log-header">
+          <h2>報到紀錄</h2>
+          <span id="logCount" class="log-count">0 筆</span>
+        </div>
+        <div id="logList" class="log-list">
+          <div class="search-empty">
+            <div class="empty-icon">≡</div>
+            <p>尚無報到紀錄</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- 全域提示 Toast -->
+<div id="toast" class="toast hidden"></div>
+
+<!-- 確認對話框 -->
+<div id="confirmDialog" class="dialog-overlay hidden">
+  <div class="dialog-box">
+    <div class="dialog-icon" id="dialogIcon">⚠️</div>
+    <h3 id="dialogTitle">確認報到</h3>
+    <p id="dialogMsg">確定要完成此來賓的報到嗎？</p>
+    <div class="dialog-actions">
+      <button class="btn-cancel" onclick="closeDialog()">取消</button>
+      <button class="btn-confirm" id="btnConfirm" onclick="confirmAction()">確認報到</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/scanner.js"></script>
+<script src="js/search.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
