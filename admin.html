@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>帳號管理後台</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0c10;--bg2:#111318;--bg3:#161a22;--bg4:#1d2230;
+  --bd:#2a3040;--bd2:#1e2535;
+  --ac:#00d4aa;--ac-d:rgba(0,212,170,.12);--ac-b:rgba(0,212,170,.3);
+  --dg:#ff4d6d;--dg-d:rgba(255,77,109,.12);
+  --wn:#ffa940;--wn-d:rgba(255,169,64,.12);
+  --bl:#4d9fff;--bl-d:rgba(77,159,255,.12);
+  --t1:#e8ecf4;--t2:#8892a4;--t3:#4a5568;
+  --r:10px;--font:'Noto Sans TC',sans-serif;--mono:'JetBrains Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t1);-webkit-font-smoothing:antialiased}
+button{cursor:pointer;border:none;outline:none;background:none;font-family:inherit}
+input,select,textarea{font-family:inherit;outline:none}
+.hidden{display:none!important}
+
+/* Layout */
+.wrap{display:flex;height:100vh}
+.side{width:220px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--bd);display:flex;flex-direction:column}
+.main{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+
+/* Sidebar */
+.side-logo{padding:20px 20px 16px;border-bottom:1px solid var(--bd)}
+.side-logo h1{font-size:.95rem;font-weight:700;color:var(--ac)}
+.side-logo p{font-size:.7rem;color:var(--t3);margin-top:3px}
+.side-nav{flex:1;padding:10px 0}
+.side-nav a{display:flex;align-items:center;gap:10px;padding:11px 20px;font-size:.84rem;color:var(--t2);text-decoration:none;cursor:pointer;transition:all .15s;user-select:none}
+.side-nav a:hover{background:var(--bg4);color:var(--t1)}
+.side-nav a.on{background:var(--ac-d);color:var(--ac);border-right:2px solid var(--ac);font-weight:600}
+.side-nav .ic{width:18px;text-align:center;font-size:1rem}
+.side-user{padding:16px 20px;border-top:1px solid var(--bd)}
+.side-user-name{font-size:.82rem;font-weight:600}
+.side-user-role{font-size:.7rem;color:var(--t3);margin-top:3px}
+.side-logout{margin-top:12px;width:100%;padding:8px;background:var(--bg4);border:1px solid var(--bd);border-radius:7px;color:var(--t2);font-size:.78rem;transition:all .15s}
+.side-logout:hover{border-color:var(--dg);color:var(--dg)}
+
+/* Topbar */
+.topbar{height:54px;flex-shrink:0;background:var(--bg2);border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;padding:0 28px}
+.topbar h2{font-size:1rem;font-weight:600}
+.topbar-acts{display:flex;gap:10px}
+
+/* Content */
+.content{flex:1;padding:24px 28px}
+
+/* Stats */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat-box{background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r);padding:16px 18px}
+.stat-box .n{font-family:var(--mono);font-size:1.9rem;font-weight:700;margin-bottom:4px}
+.stat-box .l{font-size:.72rem;color:var(--t2)}
+.s-admin .n{color:var(--wn)}.s-staff .n{color:var(--ac)}.s-dis .n{color:var(--t3)}.s-lock .n{color:var(--dg)}
+
+/* Table */
+.card{background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r);margin-bottom:20px}
+.card-hd{padding:16px 20px;border-bottom:1px solid var(--bd2);display:flex;align-items:center;justify-content:space-between}
+.card-title{font-size:.88rem;font-weight:600}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.83rem}
+thead tr{background:var(--bg4)}
+th{padding:10px 14px;text-align:left;font-weight:600;color:var(--t2);font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap}
+td{padding:11px 14px;border-bottom:1px solid var(--bd2);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.02)}
+
+/* Badges */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:.7rem;font-weight:600;font-family:var(--mono);white-space:nowrap}
+.b-admin{background:var(--wn-d);color:var(--wn)}
+.b-staff{background:var(--ac-d);color:var(--ac)}
+.b-active{background:var(--ac-d);color:var(--ac)}
+.b-disabled{background:var(--bg4);color:var(--t3)}
+.b-locked{background:var(--dg-d);color:var(--dg)}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:7px;font-size:.8rem;font-weight:600;transition:all .15s;white-space:nowrap}
+.btn-p{background:var(--ac);color:#0a0c10}.btn-p:hover{background:#00f0c0}
+.btn-o{background:none;border:1px solid var(--bd);color:var(--t2)}.btn-o:hover{border-color:var(--t2);color:var(--t1)}
+.btn-d{background:var(--dg-d);border:1px solid rgba(255,77,109,.3);color:var(--dg)}.btn-d:hover{background:var(--dg);color:#fff}
+.btn-w{background:var(--wn-d);border:1px solid rgba(255,169,64,.3);color:var(--wn)}.btn-w:hover{background:var(--wn);color:#0a0c10}
+.btn-sm{padding:4px 10px;font-size:.75rem}
+.btn-xs{padding:3px 7px;font-size:.7rem}
+
+/* Search bar */
+.search-bar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+.si-wrap{display:flex;align-items:center;gap:8px;background:var(--bg4);border:1px solid var(--bd);border-radius:8px;padding:8px 14px;flex:1;min-width:180px}
+.si-wrap:focus-within{border-color:var(--ac)}
+.si-wrap input{background:none;color:var(--t1);font-size:.85rem;flex:1}
+.si-wrap input::placeholder{color:var(--t3)}
+select.fsel{background:var(--bg4);border:1px solid var(--bd);border-radius:8px;color:var(--t1);padding:8px 12px;font-size:.8rem}
+select.fsel:focus{border-color:var(--ac)}
+
+/* Modal */
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(4px);z-index:900;display:flex;align-items:center;justify-content:center;padding:20px}
+.mo-box{background:var(--bg3);border:1px solid var(--bd);border-radius:14px;width:100%;max-width:460px;animation:su .25s ease}
+@keyframes su{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.mo-hd{padding:20px 24px 16px;border-bottom:1px solid var(--bd2);display:flex;align-items:center;justify-content:space-between}
+.mo-title{font-size:.98rem;font-weight:700}
+.mo-close{color:var(--t3);font-size:1.2rem;padding:4px;transition:color .15s}.mo-close:hover{color:var(--dg)}
+.mo-body{padding:20px 24px}
+.mo-foot{padding:14px 24px;border-top:1px solid var(--bd2);display:flex;justify-content:flex-end;gap:10px}
+
+/* Form */
+.fg{margin-bottom:16px}
+.fl{display:block;font-size:.73rem;font-weight:600;color:var(--t2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em}
+.fi{width:100%;padding:10px 14px;background:var(--bg4);border:1px solid var(--bd);border-radius:8px;color:var(--t1);font-size:.88rem;transition:border-color .15s}
+.fi:focus{border-color:var(--ac)}.fi::placeholder{color:var(--t3)}
+.fsel2{width:100%;padding:10px 14px;background:var(--bg4);border:1px solid var(--bd);border-radius:8px;color:var(--t1);font-size:.88rem}
+.fsel2:focus{border-color:var(--ac)}
+.fh{font-size:.7rem;color:var(--t3);margin-top:5px}
+.fe{font-size:.75rem;color:var(--dg);margin-top:5px;min-height:16px}
+.pw-bar{height:4px;border-radius:2px;margin-top:6px;background:var(--bd);transition:all .3s}
+.pw-w{background:var(--dg);width:30%}.pw-m{background:var(--wn);width:60%}.pw-s{background:var(--ac);width:100%}
+
+/* Login */
+.lp{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);padding:20px;position:relative}
+.lp::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 20% 80%,rgba(0,212,170,.06),transparent 70%),radial-gradient(ellipse 40% 60% at 80% 20%,rgba(77,159,255,.05),transparent 70%)}
+.lp-card{position:relative;z-index:1;width:100%;max-width:380px;background:var(--bg3);border:1px solid var(--bd);border-radius:14px;padding:36px 32px}
+.lp-icon{font-size:2rem;color:var(--ac);text-align:center;margin-bottom:10px}
+.lp-title{font-size:1.2rem;font-weight:700;text-align:center;margin-bottom:4px}
+.lp-sub{font-size:.75rem;color:var(--t3);text-align:center;margin-bottom:28px}
+
+/* Toast */
+#toast{position:fixed;top:20px;right:20px;z-index:9999;background:var(--bg4);border:1px solid var(--bd);border-radius:8px;padding:12px 20px;font-size:.85rem;font-weight:500;box-shadow:0 8px 32px rgba(0,0,0,.5);animation:fi .2s ease}
+@keyframes fi{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+#toast.ok{border-color:var(--ac);color:var(--ac)}
+#toast.er{border-color:var(--dg);color:var(--dg)}
+#toast.wn{border-color:var(--wn);color:var(--wn)}
+
+/* Log table */
+.la{font-family:var(--mono);font-size:.7rem;background:var(--bl-d);color:var(--bl);padding:2px 6px;border-radius:4px}
+.lt{font-family:var(--mono);font-size:.74rem;color:var(--t3)}
+.ok-dot{color:var(--ac)}.er-dot{color:var(--dg)}
+
+/* Responsive */
+@media(max-width:768px){
+  .wrap{flex-direction:column}
+  .side{width:100%;height:auto;flex-direction:row}
+  .side-nav{display:flex;flex-direction:row;padding:0;overflow-x:auto}
+  .side-nav a{padding:12px 14px;white-space:nowrap;flex-shrink:0}
+  .side-user{display:none}.side-logo{padding:10px 14px}
+  .stats-row{grid-template-columns:1fr 1fr}
+  .content{padding:16px}
+}
+</style>
+</head>
+<body>
+
+<!-- ===== 登入頁 ===== -->
+<div id="lp" class="lp">
+  <div class="lp-card">
+    <div class="lp-icon">✦</div>
+    <div class="lp-title">帳號管理後台</div>
+    <div class="lp-sub">活動報到系統 · Admin Panel</div>
+    <div class="fg">
+      <label class="fl">使用者名稱</label>
+      <input class="fi" id="lu" type="text" placeholder="請輸入帳號" autocomplete="username">
+    </div>
+    <div class="fg">
+      <label class="fl">密碼</label>
+      <input class="fi" id="lp2" type="password" placeholder="請輸入密碼" autocomplete="current-password">
+    </div>
+    <div id="lerr" style="font-size:.78rem;color:var(--dg);min-height:18px;margin-bottom:10px"></div>
+    <button class="btn btn-p" style="width:100%;justify-content:center;padding:11px" onclick="doLogin()">登入後台</button>
+    <p style="text-align:center;margin-top:16px">
+      <a href="./index.html" style="font-size:.74rem;color:var(--t3);text-decoration:none">← 返回報到前台</a>
+    </p>
+  </div>
+</div>
+
+<!-- ===== 主應用 ===== -->
+<div id="app" class="wrap hidden">
+  <aside class="side">
+    <div class="side-logo">
+      <h1>✦ 管理後台</h1>
+      <p id="evName">活動報到系統</p>
+    </div>
+    <nav class="side-nav">
+      <a class="on" data-p="accounts" onclick="go('accounts')">
+        <span class="ic">👥</span>帳號管理
+      </a>
+      <a data-p="loginlog" onclick="go('loginlog')">
+        <span class="ic">🔐</span>登入紀錄
+      </a>
+      <a data-p="oplog" onclick="go('oplog')">
+        <span class="ic">📋</span>操作稽核
+      </a>
+      <a href="./index.html">
+        <span class="ic">↩</span>返回前台
+      </a>
+    </nav>
+    <div class="side-user">
+      <div class="side-user-name" id="suName">—</div>
+      <div class="side-user-role" id="suRole">—</div>
+      <button class="side-logout" onclick="doLogout()">登出</button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <h2 id="pgTitle">帳號管理</h2>
+      <div class="topbar-acts" id="tActs"></div>
+    </header>
+    <div class="content">
+
+      <!-- Page: Accounts -->
+      <div id="pg-accounts">
+        <div class="stats-row">
+          <div class="stat-box s-admin"><div class="n" id="sA">—</div><div class="l">後台管理員</div></div>
+          <div class="stat-box s-staff"><div class="n" id="sS">—</div><div class="l">工作人員</div></div>
+          <div class="stat-box s-dis">  <div class="n" id="sD">—</div><div class="l">已停用</div></div>
+          <div class="stat-box s-lock"> <div class="n" id="sL">—</div><div class="l">鎖定中</div></div>
+        </div>
+        <div class="search-bar">
+          <div class="si-wrap">
+            <span style="opacity:.5">🔍</span>
+            <input type="text" id="kw" placeholder="搜尋帳號或顯示名稱..." oninput="filterAcct(this.value)">
+          </div>
+          <select class="fsel" id="rf" onchange="filterAcct(document.getElementById('kw').value)">
+            <option value="">全部角色</option>
+            <option value="admin">後台管理員</option>
+            <option value="staff">工作人員</option>
+          </select>
+          <select class="fsel" id="sf" onchange="filterAcct(document.getElementById('kw').value)">
+            <option value="">全部狀態</option>
+            <option value="active">啟用</option>
+            <option value="disabled">停用</option>
+          </select>
+          <button class="btn btn-o" onclick="loadAccts()">↻</button>
+        </div>
+        <div class="card">
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr>
+                <th>帳號 / 顯示名稱</th><th>角色</th><th>狀態</th>
+                <th>最後登入</th><th>建立者</th><th style="text-align:right">操作</th>
+              </tr></thead>
+              <tbody id="atb">
+                <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--t3)">載入中...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Page: Login Log -->
+      <div id="pg-loginlog" class="hidden">
+        <div class="card">
+          <div class="card-hd">
+            <span class="card-title">登入紀錄（最近 300 筆）</span>
+            <button class="btn btn-o btn-sm" onclick="loadLog('login')">↻ 重整</button>
+          </div>
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th>時間</th><th>帳號</th><th>結果</th><th>說明</th></tr></thead>
+              <tbody id="ltb">
+                <tr><td colspan="4" style="text-align:center;padding:28px;color:var(--t3)">請點「重整」載入</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Page: Op Log -->
+      <div id="pg-oplog" class="hidden">
+        <div class="card">
+          <div class="card-hd">
+            <span class="card-title">操作稽核紀錄（最近 300 筆）</span>
+            <button class="btn btn-o btn-sm" onclick="loadLog('operation')">↻ 重整</button>
+          </div>
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th>時間</th><th>帳號</th><th>動作</th><th>說明</th></tr></thead>
+              <tbody id="otb">
+                <tr><td colspan="4" style="text-align:center;padding:28px;color:var(--t3)">請點「重整」載入</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- Modal: 新增/編輯帳號 -->
+<div id="mo1" class="mo hidden">
+  <div class="mo-box">
+    <div class="mo-hd">
+      <span class="mo-title" id="mo1t">新增帳號</span>
+      <button class="mo-close" onclick="closeMo('mo1')">✕</button>
+    </div>
+    <div class="mo-body">
+      <input type="hidden" id="eid">
+      <div class="fg">
+        <label class="fl">使用者名稱（登入用）</label>
+        <input class="fi" id="fu" type="text" placeholder="3~20 字元，英數字和底線" autocomplete="off">
+        <div class="fh">建立後無法修改</div>
+      </div>
+      <div class="fg">
+        <label class="fl">顯示名稱</label>
+        <input class="fi" id="fd" type="text" placeholder="例：王小明">
+      </div>
+      <div class="fg" id="fpg">
+        <label class="fl">密碼</label>
+        <input class="fi" id="fp" type="password" placeholder="至少 6 個字元" oninput="chkPw(this.value)">
+        <div class="pw-bar" id="pwb"></div>
+        <div class="fh" id="pwh">建議英數混合 8 字元以上</div>
+      </div>
+      <div class="fg">
+        <label class="fl">角色</label>
+        <select class="fsel2" id="fr">
+          <option value="staff">工作人員（掃碼報到、手動搜尋、Dashboard）</option>
+          <option value="admin">後台管理員（帳號管理、稽核、所有功能）</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label class="fl">備註（選填）</label>
+        <input class="fi" id="fmk" type="text" placeholder="負責場次、聯絡電話...">
+      </div>
+      <div class="fe" id="mo1e"></div>
+    </div>
+    <div class="mo-foot">
+      <button class="btn btn-o" onclick="closeMo('mo1')">取消</button>
+      <button class="btn btn-p" id="mo1sb" onclick="submitAcct()">建立帳號</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: 重設密碼 -->
+<div id="mo2" class="mo hidden">
+  <div class="mo-box" style="max-width:400px">
+    <div class="mo-hd">
+      <span class="mo-title">重設密碼</span>
+      <button class="mo-close" onclick="closeMo('mo2')">✕</button>
+    </div>
+    <div class="mo-body">
+      <input type="hidden" id="rid">
+      <p id="rname" style="font-size:.84rem;color:var(--t2);margin-bottom:18px;padding:10px 14px;background:var(--bg4);border-radius:7px"></p>
+      <div class="fg">
+        <label class="fl">新密碼</label>
+        <input class="fi" id="rnp" type="password" placeholder="至少 6 個字元">
+      </div>
+      <div class="fg">
+        <label class="fl">確認新密碼</label>
+        <input class="fi" id="rcp" type="password" placeholder="再次輸入">
+      </div>
+      <div class="fe" id="mo2e"></div>
+    </div>
+    <div class="mo-foot">
+      <button class="btn btn-o" onclick="closeMo('mo2')">取消</button>
+      <button class="btn btn-p" onclick="submitReset()">確認重設</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="hidden"></div>
+
+<script src="./js/config.js"></script>
+<script src="./js/auth.js"></script>
+<script>
+/* ─── 狀態 ─── */
+let allAccts = [];
+let editMode = false;
+
+/* ─── Init ─── */
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('evName').textContent = APP_CONFIG.EVENT.name;
+  if (Auth.isLoggedIn() && Auth.isAdmin()) { enterApp(); return; }
+  Auth.clearSession();
+  document.getElementById('lp2').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+});
+
+/* ─── Login ─── */
+async function doLogin() {
+  const u = document.getElementById('lu').value.trim();
+  const p = document.getElementById('lp2').value;
+  const errEl = document.getElementById('lerr');
+  errEl.textContent = '';
+  if (!u || !p) { errEl.textContent = '請填入帳號與密碼'; return; }
+  const btn = document.querySelector('#lp .btn-p');
+  btn.textContent = '登入中...'; btn.disabled = true;
+  try {
+    const r = await Auth.login(u, p);
+    if (r.success) {
+      if (!Auth.isAdmin()) {
+        errEl.textContent = '此帳號無後台管理權限';
+        Auth.clearSession(); return;
+      }
+      enterApp();
+    } else {
+      errEl.textContent = r.message || '帳號或密碼錯誤';
+      document.getElementById('lp2').value = '';
+    }
+  } catch { errEl.textContent = '網路錯誤，請稍後再試'; }
+  finally { btn.textContent = '登入後台'; btn.disabled = false; }
+}
+
+function enterApp() {
+  document.getElementById('lp').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  const user = Auth.getUser();
+  document.getElementById('suName').textContent = user.displayName;
+  document.getElementById('suRole').textContent = '🔑 後台管理員';
+  loadAccts();
+}
+
+async function doLogout() {
+  await Auth.logout();
+  document.getElementById('app').classList.add('hidden');
+  document.getElementById('lp').classList.remove('hidden');
+  document.getElementById('lp2').value = '';
+}
+
+/* ─── Page Switch ─── */
+function go(page) {
+  ['accounts','loginlog','oplog'].forEach(p => {
+    document.getElementById('pg-'+p).classList.toggle('hidden', p !== page);
+  });
+  document.querySelectorAll('.side-nav a[data-p]').forEach(a => {
+    a.classList.toggle('on', a.dataset.p === page);
+  });
+  const titles = { accounts:'帳號管理', loginlog:'登入紀錄', oplog:'操作稽核' };
+  document.getElementById('pgTitle').textContent = titles[page];
+  const ta = document.getElementById('tActs');
+  ta.innerHTML = page === 'accounts'
+    ? '<button class="btn btn-p" onclick="openCreate()">＋ 新增帳號</button>' : '';
+  if (page === 'loginlog') loadLog('login');
+  if (page === 'oplog')    loadLog('operation');
+}
+
+/* ─── Load Accounts ─── */
+async function loadAccts() {
+  try {
+    const r = await Auth.authGet('getAccounts');
+    if (r.success) { allAccts = r.data || []; renderStats(allAccts); renderTable(allAccts); }
+    else toast(r.message, 'er');
+  } catch { toast('載入失敗', 'er'); }
+}
+
+function renderStats(list) {
+  document.getElementById('sA').textContent = list.filter(a => a.role === 'admin').length;
+  document.getElementById('sS').textContent = list.filter(a => a.role === 'staff').length;
+  document.getElementById('sD').textContent = list.filter(a => a.status === 'disabled').length;
+  document.getElementById('sL').textContent = list.filter(a => a.isLocked).length;
+}
+
+function filterAcct(kw) {
+  const role   = document.getElementById('rf').value;
+  const status = document.getElementById('sf').value;
+  const k = (kw || '').toLowerCase();
+  const f = allAccts.filter(a =>
+    (!k      || a.username.toLowerCase().includes(k) || a.displayName.toLowerCase().includes(k)) &&
+    (!role   || a.role === role) &&
+    (!status || a.status === status)
+  );
+  renderTable(f);
+}
+
+function renderTable(list) {
+  const tb  = document.getElementById('atb');
+  const me  = Auth.getUser();
+  if (!list.length) {
+    tb.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--t3)">查無帳號</td></tr>';
+    return;
+  }
+  tb.innerHTML = list.map(a => {
+    const isSelf = a.id === me.id;
+    const locked = a.isLocked;
+    return `<tr>
+      <td>
+        <div style="font-weight:600">${x(a.displayName)}${isSelf ? ' <span style="font-size:.65rem;color:var(--ac)">(本人)</span>' : ''}</div>
+        <div style="font-size:.74rem;color:var(--t3);font-family:var(--mono);margin-top:2px">${x(a.username)}</div>
+        ${a.remark ? `<div style="font-size:.7rem;color:var(--t3);margin-top:3px">${x(a.remark)}</div>` : ''}
+      </td>
+      <td><span class="badge ${a.role === 'admin' ? 'b-admin' : 'b-staff'}">${x(a.roleLabel)}</span></td>
+      <td>
+        <span class="badge ${a.status === 'active' ? 'b-active' : 'b-disabled'}">${a.status === 'active' ? '啟用' : '停用'}</span>
+        ${locked ? ' <span class="badge b-locked">🔒 鎖定中</span>' : ''}
+        ${a.failCount > 0 && !locked ? `<div style="font-size:.68rem;color:var(--wn);margin-top:3px">失敗 ${a.failCount} 次</div>` : ''}
+      </td>
+      <td class="lt">${a.lastLogin || '—'}</td>
+      <td style="font-size:.75rem;color:var(--t3)">${x(a.createdBy)}</td>
+      <td>
+        <div style="display:flex;gap:5px;justify-content:flex-end;flex-wrap:wrap">
+          <button class="btn btn-o btn-xs" onclick='openEdit(${JSON.stringify(a)})'>✏️ 編輯</button>
+          <button class="btn btn-o btn-xs" onclick="openReset('${a.id}','${x(a.displayName)}')">🔑 改密</button>
+          ${locked ? `<button class="btn btn-w btn-xs" onclick="unlockAcct('${a.id}')">🔓 解鎖</button>` : ''}
+          ${!isSelf ? `<button class="btn ${a.status==='active'?'btn-d':'btn-o'} btn-xs" onclick="toggleStatus('${a.id}','${a.status}')">${a.status==='active'?'停用':'啟用'}</button>` : ''}
+          ${!isSelf ? `<button class="btn btn-d btn-xs" onclick="delAcct('${a.id}','${x(a.displayName)}')">🗑</button>` : ''}
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+/* ─── Create ─── */
+function openCreate() {
+  editMode = false;
+  document.getElementById('mo1t').textContent = '新增帳號';
+  document.getElementById('mo1sb').textContent = '建立帳號';
+  document.getElementById('eid').value = '';
+  ['fu','fd','fp','fmk'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('fu').disabled = false;
+  document.getElementById('fr').value = 'staff';
+  document.getElementById('mo1e').textContent = '';
+  document.getElementById('fpg').style.display = '';
+  document.getElementById('pwb').className = 'pw-bar';
+  document.getElementById('mo1').classList.remove('hidden');
+  setTimeout(() => document.getElementById('fu').focus(), 80);
+}
+
+/* ─── Edit ─── */
+function openEdit(a) {
+  editMode = true;
+  document.getElementById('mo1t').textContent = '編輯帳號';
+  document.getElementById('mo1sb').textContent = '儲存變更';
+  document.getElementById('eid').value = a.id;
+  document.getElementById('fu').value  = a.username; document.getElementById('fu').disabled = true;
+  document.getElementById('fd').value  = a.displayName;
+  document.getElementById('fr').value  = a.role;
+  document.getElementById('fmk').value = a.remark || '';
+  document.getElementById('mo1e').textContent = '';
+  document.getElementById('fpg').style.display = 'none';
+  document.getElementById('mo1').classList.remove('hidden');
+}
+
+/* ─── Submit ─── */
+async function submitAcct() {
+  const errEl = document.getElementById('mo1e');
+  errEl.textContent = '';
+  const dn   = document.getElementById('fd').value.trim();
+  const role = document.getElementById('fr').value;
+  const rmk  = document.getElementById('fmk').value.trim();
+
+  if (editMode) {
+    const id = document.getElementById('eid').value;
+    if (!dn) { errEl.textContent = '顯示名稱不可為空'; return; }
+    const r = await Auth.authPost('updateAccount', { targetId: id, displayName: dn, role, remark: rmk });
+    if (r.success) { toast('帳號已更新', 'ok'); closeMo('mo1'); loadAccts(); }
+    else errEl.textContent = r.message;
+  } else {
+    const un = document.getElementById('fu').value.trim();
+    const pw = document.getElementById('fp').value;
+    if (!un || !dn || !pw) { errEl.textContent = '帳號、顯示名稱、密碼均為必填'; return; }
+    if (pw.length < 6) { errEl.textContent = '密碼至少 6 個字元'; return; }
+    const r = await Auth.authPost('createAccount', { username: un, displayName: dn, password: pw, role, remark: rmk });
+    if (r.success) { toast('✅ 帳號「' + un + '」建立成功', 'ok'); closeMo('mo1'); loadAccts(); }
+    else errEl.textContent = r.message;
+  }
+}
+
+/* ─── Reset Password ─── */
+function openReset(id, name) {
+  document.getElementById('rid').value = id;
+  document.getElementById('rname').textContent = '重設帳號：' + name;
+  document.getElementById('rnp').value = '';
+  document.getElementById('rcp').value = '';
+  document.getElementById('mo2e').textContent = '';
+  document.getElementById('mo2').classList.remove('hidden');
+}
+
+async function submitReset() {
+  const id  = document.getElementById('rid').value;
+  const np  = document.getElementById('rnp').value;
+  const cp  = document.getElementById('rcp').value;
+  const err = document.getElementById('mo2e');
+  err.textContent = '';
+  if (!np) { err.textContent = '請輸入新密碼'; return; }
+  if (np.length < 6) { err.textContent = '密碼至少 6 個字元'; return; }
+  if (np !== cp) { err.textContent = '兩次密碼不一致'; return; }
+  const r = await Auth.authPost('resetPassword', { targetId: id, newPassword: np });
+  if (r.success) { toast('密碼已重設' + (r.data?.forceLogout ? '，對方下次需重新登入' : ''), 'ok'); closeMo('mo2'); }
+  else err.textContent = r.message;
+}
+
+/* ─── Toggle Status ─── */
+async function toggleStatus(id, cur) {
+  const ns = cur === 'active' ? 'disabled' : 'active';
+  if (!confirm(`確定要${ns === 'disabled' ? '停用' : '啟用'}此帳號？`)) return;
+  const r = await Auth.authPost('toggleAccountStatus', { targetId: id, status: ns });
+  if (r.success) { toast(`帳號已${ns === 'disabled' ? '停用' : '啟用'}`, 'ok'); loadAccts(); }
+  else toast(r.message, 'er');
+}
+
+/* ─── Unlock ─── */
+async function unlockAcct(id) {
+  const r = await Auth.authPost('unlockAccount', { targetId: id });
+  if (r.success) { toast('帳號鎖定已解除', 'ok'); loadAccts(); }
+  else toast(r.message, 'er');
+}
+
+/* ─── Delete ─── */
+async function delAcct(id, name) {
+  if (!confirm(`確定要刪除帳號「${name}」？此操作無法復原。`)) return;
+  const r = await Auth.authPost('deleteAccount', { targetId: id });
+  if (r.success) { toast('帳號已刪除', 'ok'); loadAccts(); }
+  else toast(r.message, 'er');
+}
+
+/* ─── Load Logs ─── */
+async function loadLog(type) {
+  const tbId = type === 'login' ? 'ltb' : 'otb';
+  const tb   = document.getElementById(tbId);
+  tb.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--t3)">載入中...</td></tr>';
+  try {
+    const r = await Auth.authGet('getLogs', { type });
+    if (r.success) {
+      const logs = r.data || [];
+      if (!logs.length) {
+        tb.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--t3)">暫無紀錄</td></tr>';
+        return;
+      }
+      tb.innerHTML = logs.map(l => {
+        const ok = l.result && l.result.includes('成功');
+        return `<tr>
+          <td class="lt">${x(l.time)}</td>
+          <td style="font-weight:600">${x(l.user)}</td>
+          <td>${type === 'login'
+            ? `<span class="${ok ? 'ok-dot' : 'er-dot'}">${x(l.result)}</span>`
+            : `<span class="la">${x(l.result || l.action || '')}</span>`}</td>
+          <td style="font-size:.8rem;color:var(--t2)">${x(l.detail)}</td>
+        </tr>`;
+      }).join('');
+    } else toast(r.message, 'er');
+  } catch { toast('載入失敗', 'er'); }
+}
+
+/* ─── Pw Strength ─── */
+function chkPw(v) {
+  const bar = document.getElementById('pwb');
+  const hint = document.getElementById('pwh');
+  if (!v) { bar.className = 'pw-bar'; hint.textContent = '建議英數混合 8 字元以上'; return; }
+  const sc = (v.length>=8?1:0) + (/[A-Z]/.test(v)?1:0) + (/[a-z]/.test(v)?1:0) + (/[0-9]/.test(v)?1:0);
+  if (sc <= 1) { bar.className = 'pw-bar pw-w'; hint.textContent = '強度：弱'; }
+  else if (sc <= 2) { bar.className = 'pw-bar pw-m'; hint.textContent = '強度：中'; }
+  else { bar.className = 'pw-bar pw-s'; hint.textContent = '強度：強 ✓'; }
+}
+
+/* ─── Utils ─── */
+function closeMo(id) { document.getElementById(id).classList.add('hidden'); }
+function x(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+let _tt;
+function toast(msg, type) {
+  const el = document.getElementById('toast');
+  if (_tt) clearTimeout(_tt);
+  el.textContent = msg; el.className = type || ''; el.classList.remove('hidden');
+  _tt = setTimeout(() => el.classList.add('hidden'), 2800);
+}
+
+document.getElementById('mo1').addEventListener('click', e => { if (e.target === document.getElementById('mo1')) closeMo('mo1'); });
+document.getElementById('mo2').addEventListener('click', e => { if (e.target === document.getElementById('mo2')) closeMo('mo2'); });
+</script>
+</body>
+</html>

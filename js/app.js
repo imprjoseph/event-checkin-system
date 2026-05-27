@@ -1,66 +1,68 @@
 /**
  * ============================================
- * 活動報到系統 - 主控制器
+ * 活動報到系統 - 主控制器 (v2 - Token Auth)
  * app.js
  * ============================================
  */
 
 // ===== 應用程式初始化 =====
 document.addEventListener('DOMContentLoaded', () => {
-  // 設定活動資訊
   const ev = APP_CONFIG.EVENT;
   document.title = ev.name + ' 報到系統';
   document.getElementById('eventTitle').textContent = ev.name;
   document.getElementById('eventSubtitle').textContent = `${ev.shortName} · ${ev.date}`;
 
-  // 檢查登入狀態
-  const staffName = sessionStorage.getItem('staffName');
-  const isLoggedIn = sessionStorage.getItem('isLoggedIn');
-
-  if (isLoggedIn === 'true' && staffName) {
-    showApp(staffName);
+  // 已有有效 Token → 直接進入
+  if (Auth.isLoggedIn() && Auth.can('canCheckIn')) {
+    showApp(Auth.getUser().displayName);
+    return;
   }
+  Auth.clearSession();
 
-  // Enter 鍵登入
   document.getElementById('staffPassword').addEventListener('keydown', e => {
     if (e.key === 'Enter') handleLogin();
   });
 });
 
-// ===== 登入處理 =====
-function handleLogin() {
-  const staffName = document.getElementById('staffName').value.trim();
+// ===== 登入處理（Token 認證）=====
+async function handleLogin() {
+  const username = document.getElementById('staffName').value.trim();
   const password = document.getElementById('staffPassword').value;
-  const errorEl = document.getElementById('loginError');
+  const errorEl  = document.getElementById('loginError');
+  errorEl.textContent = '';
 
-  if (!staffName) {
-    errorEl.textContent = '請輸入工作人員姓名';
-    document.getElementById('staffName').focus();
-    return;
+  if (!username) { errorEl.textContent = '請輸入帳號'; return; }
+  if (!password) { errorEl.textContent = '請輸入密碼'; return; }
+
+  const btn = document.querySelector('.btn-login');
+  btn.style.opacity = '.6';
+  btn.style.pointerEvents = 'none';
+
+  try {
+    const result = await Auth.login(username, password);
+    if (result.success) {
+      if (!Auth.can('canCheckIn')) {
+        errorEl.textContent = '此帳號無報到權限，請聯繫管理員';
+        Auth.clearSession();
+        return;
+      }
+      showApp(result.data.user.displayName);
+    } else {
+      errorEl.textContent = result.message || '帳號或密碼錯誤';
+      document.getElementById('staffPassword').value = '';
+    }
+  } catch {
+    errorEl.textContent = '網路連線失敗，請稍後再試';
+  } finally {
+    btn.style.opacity = '';
+    btn.style.pointerEvents = '';
   }
-
-  const validPasswords = APP_CONFIG.STAFF_PASSWORD;
-  const isValid = Array.isArray(validPasswords)
-    ? validPasswords.includes(password)
-    : password === validPasswords;
-
-  if (!isValid) {
-    errorEl.textContent = '密碼錯誤，請重新輸入';
-    document.getElementById('staffPassword').value = '';
-    document.getElementById('staffPassword').focus();
-    return;
-  }
-
-  sessionStorage.setItem('staffName', staffName);
-  sessionStorage.setItem('isLoggedIn', 'true');
-  showApp(staffName);
 }
 
 // ===== 登出處理 =====
-function handleLogout() {
+async function handleLogout() {
   if (!confirm('確定要登出嗎？')) return;
-  sessionStorage.removeItem('staffName');
-  sessionStorage.removeItem('isLoggedIn');
+  await Auth.logout();
   Scanner.stop();
   Dashboard.stopAutoRefresh();
   document.getElementById('app').classList.add('hidden');
@@ -75,11 +77,32 @@ function showApp(staffName) {
   document.getElementById('loginOverlay').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
 
-  // 設定人員資訊
-  document.getElementById('headerStaffName').textContent = `👤 ${staffName}`;
+  const user = Auth.getUser();
+  const roleLabel = user?.role === 'superadmin' ? '⭐' :
+                    user?.role === 'admin'       ? '🔑' : '👤';
+  document.getElementById('headerStaffName').textContent = `${roleLabel} ${staffName}`;
   document.getElementById('headerEventName').textContent = APP_CONFIG.EVENT.name;
 
-  // 初始化 Scanner
+  // 管理員顯示後台入口連結
+  if (Auth.can('canManageAccounts')) {
+    const headerRight = document.querySelector('.header-right');
+    if (!document.getElementById('adminLink')) {
+      const adminLink = document.createElement('a');
+      adminLink.id = 'adminLink';
+      adminLink.href = './admin.html';
+      adminLink.style.cssText = 'font-size:.7rem;color:var(--accent);text-decoration:none;padding:4px 8px;border:1px solid var(--accent-border);border-radius:6px;white-space:nowrap;';
+      adminLink.textContent = '管理後台';
+      headerRight.insertBefore(adminLink, headerRight.querySelector('.btn-logout'));
+    }
+  }
+
+  // staff 隱藏紀錄 tab（無權限）
+  if (!Auth.can('canViewAllLogs')) {
+    const logTab = document.querySelector('[data-tab="log"]');
+    if (logTab) logTab.style.display = 'none';
+  }
+
+  // 初始化掃描器
   Scanner.init();
 
   // 載入 Dashboard
@@ -89,32 +112,23 @@ function showApp(staffName) {
 
 // ===== Tab 切換 =====
 function switchTab(tabName) {
-  // 停止舊 Tab 的活動
   const prevScanner = document.querySelector('#tab-scan.active');
-  if (prevScanner && tabName !== 'scan') {
-    Scanner.stop();
-  }
+  if (prevScanner && tabName !== 'scan') Scanner.stop();
 
-  // 切換 Tab
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
 
   document.getElementById(`tab-${tabName}`).classList.add('active');
   document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
 
-  // Tab 進入動作
-  if (tabName === 'dashboard') {
-    API.clearCache();
-    Dashboard.load();
-  } else if (tabName === 'log') {
-    Dashboard.loadLog();
-  }
+  if (tabName === 'dashboard') { API.clearCache(); Dashboard.load(); }
+  else if (tabName === 'log')  { Dashboard.loadLog(); }
 }
 
 // ===== 對話框控制 =====
 let dialogConfirmCallback = null;
 
-function openDialog(icon, title, msg, confirmText, callback, isDanger = false) {
+function openDialog(icon, title, msg, confirmText, callback, isDanger) {
   document.getElementById('dialogIcon').textContent = icon;
   document.getElementById('dialogTitle').textContent = title;
   document.getElementById('dialogMsg').textContent = msg;
@@ -132,18 +146,15 @@ function closeDialog() {
 }
 
 function confirmAction() {
-  if (dialogConfirmCallback) {
-    dialogConfirmCallback();
-  } else {
-    // 手動搜尋的報到確認
-    Search.doManualCheckin();
-  }
+  if (dialogConfirmCallback) dialogConfirmCallback();
+  else Search.doManualCheckin();
 }
 
 // ===== Toast 通知 =====
 let toastTimer = null;
-
-function showToast(msg, type = 'info', duration = 2500) {
+function showToast(msg, type, duration) {
+  type = type || 'info';
+  duration = duration || 2500;
   const el = document.getElementById('toast');
   if (toastTimer) clearTimeout(toastTimer);
   el.textContent = msg;
@@ -151,7 +162,6 @@ function showToast(msg, type = 'info', duration = 2500) {
   el.classList.remove('hidden');
   toastTimer = setTimeout(() => el.classList.add('hidden'), duration);
 }
-
 window.showToast = showToast;
 
 // ===== Header 計數更新 =====
@@ -159,40 +169,27 @@ function updateHeaderCount(delta) {
   const el = document.getElementById('headerCount');
   const current = parseInt(el.textContent) || 0;
   el.textContent = current + delta;
-
-  // 閃爍動畫
   el.style.transform = 'scale(1.3)';
-  el.style.color = 'var(--accent)';
-  setTimeout(() => {
-    el.style.transform = '';
-  }, 300);
+  setTimeout(() => { el.style.transform = ''; }, 300);
 }
-
 window.updateHeaderCount = updateHeaderCount;
 
-// ===== 本地報到紀錄（即時反映不需 API）=====
-function addLocalLog(data) {
-  Dashboard.addLocalEntry(data);
-}
-
+// ===== 本地報到紀錄 =====
+function addLocalLog(data) { Dashboard.addLocalEntry(data); }
 window.addLocalLog = addLocalLog;
 
-// ===== PWA Service Worker 註冊 =====
+// ===== PWA =====
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(() => {
-      // Service Worker 可選，失敗不影響功能
-    });
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
   });
 }
 
-// ===== 防止頁面縮放（行動裝置報到操作優化）=====
 document.addEventListener('gesturestart', e => e.preventDefault());
 document.addEventListener('touchmove', e => {
   if (e.touches.length > 1) e.preventDefault();
 }, { passive: false });
 
-// ===== 點擊 overlay 關閉對話框 =====
 document.getElementById('confirmDialog').addEventListener('click', function(e) {
   if (e.target === this) closeDialog();
 });
