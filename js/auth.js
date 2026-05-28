@@ -1,11 +1,11 @@
 /**
  * ============================================
- * 活動報到系統 - 前端認證模組 v3
+ * 活動報到系統 - 前端認證模組 v4
  * auth.js
  * ============================================
- * 雙層角色：admin（後台管理員）/ staff（工作人員）
- * Token 存於 sessionStorage（關閉分頁即清除）
- * 自動每 30 分鐘刷新 Token TTL
+ * GAS 相容重點：
+ *   POST 不加 Content-Type header
+ *   一定要加 redirect:'follow' 處理 302
  */
 
 const Auth = (() => {
@@ -14,15 +14,15 @@ const Auth = (() => {
   let _refreshTimer = null;
 
   /* ── 基礎讀取 ── */
-  function getToken()  { return sessionStorage.getItem(TOKEN_KEY); }
-  function getUser()   {
+  function getToken()   { return sessionStorage.getItem(TOKEN_KEY); }
+  function getUser()    {
     try { return JSON.parse(sessionStorage.getItem(USER_KEY) || 'null'); }
     catch { return null; }
   }
-  function isLoggedIn(){ return !!(getToken() && getUser()); }
-  function can(perm)   { return !!(getUser()?.permissions?.[perm]); }
-  function isAdmin()   { return getUser()?.role === 'admin'; }
-  function isStaff()   { return getUser()?.role === 'staff'; }
+  function isLoggedIn() { return !!(getToken() && getUser()); }
+  function can(perm)    { return !!(getUser()?.permissions?.[perm]); }
+  function isAdmin()    { return getUser()?.role === 'admin'; }
+  function isStaff()    { return getUser()?.role === 'staff'; }
 
   /* ── 登入 ── */
   async function login(username, password) {
@@ -76,23 +76,29 @@ const Auth = (() => {
     if (!token) throw new Error('未登入');
     return _get(action, { ...(params || {}), token });
   }
-
   async function authPost(action, body) {
     const token = getToken();
     if (!token) throw new Error('未登入');
     return _post(action, { ...(body || {}), token });
   }
 
-  /* ── 底層 Fetch（複用 api.js 的 CONFIG）── */
+  /* ── GET（GAS 標準方式）── */
   function _get(action, params) {
     const p = new URLSearchParams({ action, ...params });
-    return fetch(`${APP_CONFIG.API_URL}?${p}`).then(r => r.json());
+    return fetch(`${APP_CONFIG.API_URL}?${p}`, {
+      method: 'GET',
+      redirect: 'follow',
+    }).then(r => r.json());
   }
+
+  /* ── POST（GAS 相容：不加 Content-Type，加 redirect:follow）── */
   function _post(action, body) {
     return fetch(APP_CONFIG.API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action, ...body }),
+      method:   'POST',
+      redirect: 'follow',
+      body:     JSON.stringify({ action, ...body }),
+      // ⚠️ 刻意不加 Content-Type header
+      // 加了會觸發 CORS preflight，GAS 無法處理
     }).then(r => r.json());
   }
 

@@ -48,11 +48,11 @@ async function handleLogin() {
       }
       showApp(result.data.user.displayName);
     } else {
-      errorEl.textContent = result.message || '帳號或密碼錯誤';
+      errorEl.textContent = mapLoginError(result.message);
       document.getElementById('staffPassword').value = '';
     }
   } catch {
-    errorEl.textContent = '網路連線失敗，請稍後再試';
+    errorEl.textContent = mapLoginError('網路連線失敗');
   } finally {
     btn.style.opacity = '';
     btn.style.pointerEvents = '';
@@ -193,3 +193,95 @@ document.addEventListener('touchmove', e => {
 document.getElementById('confirmDialog').addEventListener('click', function(e) {
   if (e.target === this) closeDialog();
 });
+
+// ============================================
+// 活動名稱編輯功能
+// ============================================
+
+const EVENT_NAME_KEY = 'checkin_event_name';
+
+/** 初始化：從 localStorage 讀取自訂活動名稱 */
+function initEventName() {
+  const saved = localStorage.getItem(EVENT_NAME_KEY);
+  if (saved && saved.trim()) {
+    setEventNameDisplay(saved.trim());
+  }
+}
+
+/** 更新所有顯示活動名稱的位置 */
+function setEventNameDisplay(name) {
+  document.getElementById('eventTitle').textContent = name;
+  document.getElementById('headerEventName').textContent = name;
+  document.title = name + ' 報到系統';
+}
+
+/** 開啟編輯對話框 */
+function openEventEditor() {
+  const current = document.getElementById('eventTitle').textContent;
+  const input = document.getElementById('newEventName');
+  input.value = current === '活動報到系統' ? '' : current;
+  document.getElementById('eventEditorModal').classList.remove('hidden');
+  setTimeout(() => input.focus(), 80);
+  input.addEventListener('keydown', function handler(e) {
+    if (e.key === 'Enter') { saveEventName(); input.removeEventListener('keydown', handler); }
+    if (e.key === 'Escape') { closeEventEditor(); input.removeEventListener('keydown', handler); }
+  });
+}
+
+/** 關閉編輯對話框 */
+function closeEventEditor() {
+  document.getElementById('eventEditorModal').classList.add('hidden');
+}
+
+/** 儲存活動名稱 */
+function saveEventName() {
+  const input = document.getElementById('newEventName');
+  const name  = input.value.trim();
+  if (!name) {
+    input.style.borderColor = 'var(--danger)';
+    setTimeout(() => input.style.borderColor = '', 1500);
+    return;
+  }
+  localStorage.setItem(EVENT_NAME_KEY, name);
+  setEventNameDisplay(name);
+  closeEventEditor();
+  showToast('✅ 活動名稱已更新', 'success');
+}
+
+// DOMContentLoaded 時補充初始化
+document.addEventListener('DOMContentLoaded', () => {
+  initEventName();
+});
+
+// ============================================
+// 錯誤訊息對照（API 錯誤 → 中文說明）
+// ============================================
+function mapLoginError(apiMsg) {
+  if (!apiMsg) return '帳號或密碼錯誤，請重新輸入';
+
+  const msg = String(apiMsg);
+
+  if (msg.includes('帳號或密碼錯誤')) {
+    // 嘗試提取剩餘次數
+    const match = msg.match(/還有\s*(\d+)\s*次/);
+    if (match) return `密碼錯誤，還有 ${match[1]} 次機會`;
+    return '密碼錯誤，請重新輸入';
+  }
+  if (msg.includes('鎖定') || msg.includes('429')) {
+    const min = msg.match(/(\d+)\s*分鐘/);
+    return min
+      ? `⚠️ 登入失敗次數過多，帳號已鎖定 ${min[1]} 分鐘，請稍後再試`
+      : '⚠️ 帳號已暫時鎖定，請稍後再試或聯繫管理員';
+  }
+  if (msg.includes('停用') || msg.includes('disabled')) {
+    return '此帳號已停用，請聯繫管理員';
+  }
+  if (msg.includes('尚未初始化')) {
+    return '帳號系統尚未設定，請聯繫管理員';
+  }
+  if (msg.includes('網路') || msg.includes('fetch')) {
+    return '網路連線失敗，請確認網路後重試';
+  }
+  return msg;
+}
+window.mapLoginError = mapLoginError;

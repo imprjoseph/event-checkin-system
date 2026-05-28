@@ -15,7 +15,7 @@ const API = (() => {
     const tid = setTimeout(() => controller.abort(), cfg.API.timeout);
 
     try {
-      const res = await fetch(url, { ...options, signal: controller.signal });
+      const res = await fetch(url, { redirect: 'follow', ...options, signal: controller.signal });
       clearTimeout(tid);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return await res.json();
@@ -60,9 +60,10 @@ const API = (() => {
     }
 
     return fetchWithRetry(cfg.API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action, ...body }),
+      method:   'POST',
+      redirect: 'follow',
+      body:     JSON.stringify({ action, ...body }),
+      // ⚠️ 不加 Content-Type：GAS 不支援 preflight，加了會 CORS 失敗
     });
   }
 

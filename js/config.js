@@ -9,7 +9,7 @@
 const CONFIG = {
   // ===== 必填：Google Apps Script Web App URL =====
   // 部署 GAS 後取得，格式：https://script.google.com/macros/s/XXXXX/exec
-  API_URL: 'https://script.google.com/macros/s/AKfycbxOTko-ZG9xpe4IA3vW7mT8Ex3Ps72eFk-Sb315cAer5KgzKeCUKoSsl0Wg2L4ZwRah/exec',
+  API_URL: 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID_HERE/exec',
 
   // ===== 活動基本資料 =====
   EVENT: {
