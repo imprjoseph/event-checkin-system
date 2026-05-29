@@ -528,13 +528,14 @@ input { font-family: inherit; outline: none; border: none; }
   --impr-hover: #FF6B35;
 }
 
-/* 登入頁 Logo */
+/* 登入頁 Logo：改用透明 PNG，避免白底方塊 */
 .impr-logo-img {
-  width: 100px;
+  width: 152px;
+  max-width: 60%;
   height: auto;
   display: block;
-  margin: 0 auto 14px;
-  filter: drop-shadow(0 2px 8px rgba(232,82,26,0.2));
+  margin: 0 auto 18px;
+  filter: drop-shadow(0 8px 18px rgba(232,82,26,0.24));
 }
 
 /* 活動名稱 + 編輯按鈕 */
@@ -546,10 +547,11 @@ input { font-family: inherit; outline: none; border: none; }
   margin-bottom: 4px;
 }
 .event-name-wrap h1 {
-  font-size: 1.15rem;
+  font-size: 1.18rem;
   font-weight: 700;
   color: var(--text-primary);
   margin-bottom: 0;
+  letter-spacing: 0.02em;
 }
 .edit-event-btn {
   font-size: 0.75rem;
@@ -570,9 +572,11 @@ input { font-family: inherit; outline: none; border: none; }
 
 /* 頂部 Header Logo */
 .header-logo-img {
-  height: 22px;
-  width: auto;
-  opacity: 0.9;
+  width: 78px;
+  height: auto;
+  opacity: 0.96;
+  display: block;
+  filter: drop-shadow(0 2px 8px rgba(232,82,26,0.18));
 }
 
 /* 登入按鈕改 imPR 橘 */
