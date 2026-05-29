@@ -51,8 +51,9 @@ async function handleLogin() {
       errorEl.textContent = mapLoginError(result.message);
       document.getElementById('staffPassword').value = '';
     }
-  } catch {
-    errorEl.textContent = mapLoginError('網路連線失敗');
+  } catch (err) {
+    console.error('login failed:', err);
+    errorEl.textContent = mapLoginError(err?.message || '網路連線失敗');
   } finally {
     btn.style.opacity = '';
     btn.style.pointerEvents = '';

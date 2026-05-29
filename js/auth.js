@@ -82,35 +82,31 @@ const Auth = (() => {
     return _post(action, { ...(body || {}), token });
   }
 
-  /* ── GET（GAS 標準方式）── */
-  function _get(action, params) {
-    const p = new URLSearchParams({ action, ...params });
-    return fetch(`${APP_CONFIG.API_URL}?${p}`, {
-      method: 'GET',
-      redirect: 'follow',
-    }).then(r => r.json());
+  /* ── JSONP（避開 GitHub Pages → GAS 的 CORS 限制）── */
+  async function _get(action, params) {
+    if (!APP_CONFIG.API_URL || APP_CONFIG.API_URL.includes('YOUR_DEPLOYMENT_ID_HERE')) {
+      return { success: false, message: '尚未設定 Google Apps Script Web App URL，請先修改 js/config.js 的 API_URL' };
+    }
+
+    try {
+      return await GASJsonp.request(action, params || {}, APP_CONFIG.API.timeout);
+    } catch (err) {
+      console.error('GAS JSONP GET failed:', err);
+      return { success: false, message: err.message || '無法連到 Google Apps Script' };
+    }
   }
 
-  /* ── POST（GAS 相容：不加 Content-Type，加 redirect:follow）── */
+  /* ── POST 動作也改由 JSONP GET 傳送，避免 CORS 擋住回應 ── */
   async function _post(action, body) {
     if (!APP_CONFIG.API_URL || APP_CONFIG.API_URL.includes('YOUR_DEPLOYMENT_ID_HERE')) {
       return { success: false, message: '尚未設定 Google Apps Script Web App URL，請先修改 js/config.js 的 API_URL' };
     }
 
-    const res = await fetch(APP_CONFIG.API_URL, {
-      method:   'POST',
-      redirect: 'follow',
-      body:     JSON.stringify({ action, ...body }),
-      // ⚠️ 刻意不加 Content-Type header
-      // 加了會觸發 CORS preflight，GAS 無法處理
-    });
-
-    const text = await res.text();
     try {
-      return JSON.parse(text);
+      return await GASJsonp.request(action, body || {}, APP_CONFIG.API.timeout);
     } catch (err) {
-      console.error('GAS response is not JSON:', text);
-      return { success: false, message: '後端回傳格式錯誤，請確認 Apps Script 是否已重新部署為新版' };
+      console.error('GAS JSONP POST failed:', err);
+      return { success: false, message: err.message || '無法連到 Google Apps Script' };
     }
   }
 
