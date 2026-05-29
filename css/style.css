@@ -682,3 +682,46 @@ input { font-family: inherit; outline: none; border: none; }
   color: var(--impr);
   background: var(--impr-dim);
 }
+
+/* 中餐／伴手禮紀錄選項 */
+.pickup-options {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  width: 100%;
+  margin: 8px 0;
+}
+.pickup-options label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid var(--border, rgba(255,255,255,.15));
+  border-radius: 10px;
+  background: rgba(255,255,255,.06);
+  font-size: .9rem;
+  cursor: pointer;
+}
+.pickup-options input {
+  width: 16px;
+  height: 16px;
+}
+.dialog-pickup-options {
+  justify-content: center;
+  margin: 14px 0 4px;
+}
+.pickup-status-line {
+  margin-top: 6px;
+  font-size: .85rem;
+  color: var(--text-secondary, #9aa4b2);
+}
+.badge-pickup {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.08);
+  color: var(--text-secondary, #9aa4b2);
+  font-size: .75rem;
+}
