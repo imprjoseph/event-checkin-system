@@ -15,10 +15,20 @@ const API = (() => {
     const tid = setTimeout(() => controller.abort(), cfg.API.timeout);
 
     try {
+      if (!cfg.API_URL || cfg.API_URL.includes('YOUR_DEPLOYMENT_ID_HERE')) {
+        return { success: false, message: '尚未設定 Google Apps Script Web App URL，請先修改 js/config.js 的 API_URL' };
+      }
+
       const res = await fetch(url, { redirect: 'follow', ...options, signal: controller.signal });
       clearTimeout(tid);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return await res.json();
+      const text = await res.text();
+      try {
+        return JSON.parse(text);
+      } catch (err) {
+        console.error('GAS response is not JSON:', text);
+        return { success: false, message: '後端回傳格式錯誤，請確認 Apps Script 是否已重新部署為新版' };
+      }
     } catch (err) {
       clearTimeout(tid);
       if (retries > 0 && err.name !== 'AbortError') {

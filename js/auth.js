@@ -92,14 +92,26 @@ const Auth = (() => {
   }
 
   /* ── POST（GAS 相容：不加 Content-Type，加 redirect:follow）── */
-  function _post(action, body) {
-    return fetch(APP_CONFIG.API_URL, {
+  async function _post(action, body) {
+    if (!APP_CONFIG.API_URL || APP_CONFIG.API_URL.includes('YOUR_DEPLOYMENT_ID_HERE')) {
+      return { success: false, message: '尚未設定 Google Apps Script Web App URL，請先修改 js/config.js 的 API_URL' };
+    }
+
+    const res = await fetch(APP_CONFIG.API_URL, {
       method:   'POST',
       redirect: 'follow',
       body:     JSON.stringify({ action, ...body }),
       // ⚠️ 刻意不加 Content-Type header
       // 加了會觸發 CORS preflight，GAS 無法處理
-    }).then(r => r.json());
+    });
+
+    const text = await res.text();
+    try {
+      return JSON.parse(text);
+    } catch (err) {
+      console.error('GAS response is not JSON:', text);
+      return { success: false, message: '後端回傳格式錯誤，請確認 Apps Script 是否已重新部署為新版' };
+    }
   }
 
   return {
