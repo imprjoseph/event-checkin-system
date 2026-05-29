@@ -147,6 +147,21 @@ select.fsel:focus{border-color:var(--ac)}
   .stats-row{grid-template-columns:1fr 1fr}
   .content{padding:16px}
 }
+
+/* imPR Brand */
+:root {
+  --impr:#E8521A; --impr-d:rgba(232,82,26,.12); --impr-b:rgba(232,82,26,.35);
+}
+.impr-logo { display:block; width:80px; height:auto; margin:0 auto 10px; }
+.side-logo .impr-logo { width:64px; margin:0 0 8px; }
+.lp-icon { display:none; }
+/* Override accent color with imPR orange for login page */
+.lp-card .btn-p { background:var(--impr)!important; color:#fff!important; }
+.lp-card .btn-p:hover { background:#FF6B35!important; }
+.lp-card .fi:focus { border-color:var(--impr); }
+/* Sidebar active */
+.side-nav a.on { background:rgba(232,82,26,.1); color:var(--impr); border-right-color:var(--impr); }
+.side-logo h1 { color:var(--impr); }
 </style>
 </head>
 <body>
@@ -154,7 +169,7 @@ select.fsel:focus{border-color:var(--ac)}
 <!-- ===== 登入頁 ===== -->
 <div id="lp" class="lp">
   <div class="lp-card">
-    <div class="lp-icon">✦</div>
+    <img src="./impr_logo.png" alt="imPR" class="impr-logo">
     <div class="lp-title">帳號管理後台</div>
     <div class="lp-sub">活動報到系統 · Admin Panel</div>
     <div class="fg">
@@ -177,7 +192,8 @@ select.fsel:focus{border-color:var(--ac)}
 <div id="app" class="wrap hidden">
   <aside class="side">
     <div class="side-logo">
-      <h1>✦ 管理後台</h1>
+      <img src="./impr_logo.png" alt="imPR" class="impr-logo side-logo-img" style="width:56px;margin-bottom:8px">
+      <h1>管理後台</h1>
       <p id="evName">活動報到系統</p>
     </div>
     <nav class="side-nav">
@@ -395,7 +411,13 @@ async function doLogin() {
       }
       enterApp();
     } else {
-      errEl.textContent = r.message || '帳號或密碼錯誤';
+      errEl.textContent = (function(m){
+      if(!m) return '帳號或密碼錯誤，請重新輸入';
+      if(m.includes('鎖定')||m.includes('次數過多')){ const mn=m.match(/(\d+)\s*分鐘/); return mn?'⚠️ 帳號鎖定 '+mn[1]+' 分鐘，請稍後再試':'⚠️ 帳號已鎖定，請聯繫管理員'; }
+      if(m.includes('停用')) return '此帳號已停用，請聯繫管理員';
+      if(m.includes('帳號或密碼')) { const c=m.match(/還有\s*(\d+)\s*次/); return c?'密碼錯誤，還有 '+c[1]+' 次機會':'密碼錯誤，請重新輸入'; }
+      return m;
+    })(r.message);
       document.getElementById('lp2').value = '';
     }
   } catch { errEl.textContent = '網路錯誤，請稍後再試'; }

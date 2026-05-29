@@ -16,8 +16,11 @@
 <div id="loginOverlay" class="login-overlay">
   <div class="login-card">
     <div class="login-logo">
-      <div class="logo-icon">✦</div>
-      <h1 id="eventTitle">活動報到系統</h1>
+      <img src="./impr_logo.png" alt="imPR" class="impr-logo-img">
+      <div class="event-name-wrap" id="eventNameWrap">
+        <h1 id="eventTitle">活動報到系統</h1>
+        <button class="edit-event-btn" onclick="openEventEditor()" title="修改活動名稱">✏️</button>
+      </div>
       <p id="eventSubtitle">Event Check-in System</p>
     </div>
     <div class="login-form">
@@ -43,7 +46,7 @@
   <!-- 頂部導航 -->
   <header class="app-header">
     <div class="header-left">
-      <div class="header-logo">✦</div>
+      <img src="./impr_logo.png" alt="imPR" class="header-logo-img">
       <div class="header-info">
         <span id="headerEventName" class="header-event">活動名稱</span>
         <span id="headerStaffName" class="header-staff">工作人員</span>
@@ -244,6 +247,22 @@
     </section>
 
   </main>
+</div>
+
+
+<!-- Event Name Editor Modal -->
+<div id="eventEditorModal" class="dialog-overlay hidden">
+  <div class="dialog-box" style="max-width:380px">
+    <div class="dialog-icon">✏️</div>
+    <h3>修改活動名稱</h3>
+    <div style="margin:12px 0 16px">
+      <input type="text" id="newEventName" class="event-name-input" placeholder="輸入活動名稱" maxlength="40">
+    </div>
+    <div class="dialog-actions">
+      <button class="btn-cancel" onclick="closeEventEditor()">取消</button>
+      <button class="btn-confirm" onclick="saveEventName()">儲存</button>
+    </div>
+  </div>
 </div>
 
 <!-- 全域提示 Toast -->
