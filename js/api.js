@@ -1,3 +1,42 @@
+/* JSONP fallback：避免 jsonp-helper.js 沒載入時出現 GASJsonp is not defined */
+(function () {
+  if (window.GASJsonp && typeof window.GASJsonp.request === 'function') return;
+
+  let seq = 0;
+
+  window.GASJsonp = {
+    request(action, params = {}, timeout = 15000) {
+      return new Promise((resolve, reject) => {
+        const callbackName = '__gas_jsonp_cb_' + Date.now() + '_' + (++seq);
+        const script = document.createElement('script');
+        const timer = setTimeout(() => cleanup(new Error('API 連線逾時')), timeout);
+
+        function cleanup(err, data) {
+          clearTimeout(timer);
+          try { delete window[callbackName]; } catch (_) { window[callbackName] = undefined; }
+          if (script.parentNode) script.parentNode.removeChild(script);
+          if (err) reject(err); else resolve(data);
+        }
+
+        window[callbackName] = data => cleanup(null, data);
+        const p = new URLSearchParams();
+        p.set('action', action);
+        p.set('callback', callbackName);
+        Object.entries(params || {}).forEach(([key, value]) => {
+          if (value === undefined || value === null) return;
+          p.set(key, String(value));
+        });
+
+        const baseUrl = (window.APP_CONFIG && window.APP_CONFIG.API_URL) || '';
+        if (!baseUrl) return cleanup(new Error('尚未設定 Google Apps Script Web App URL'));
+        script.onerror = () => cleanup(new Error('API 載入失敗，請確認 Apps Script Web App URL、部署版本與權限'));
+        script.src = baseUrl + '?' + p.toString();
+        document.body.appendChild(script);
+      });
+    }
+  };
+})();
+
 /**
  * ============================================
  * 活動報到系統 - API 通訊層
@@ -24,7 +63,7 @@ const API = (() => {
     }
 
     try {
-      const data = await GASJsonp.request(action, params || {}, cfg.API.timeout);
+      const data = await window.GASJsonp.request(action, params || {}, cfg.API.timeout);
 
       if (useCache) {
         const ttl = action === 'dashboard' ? cfg.CACHE.dashboardTTL : cfg.CACHE.searchTTL;

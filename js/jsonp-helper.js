@@ -3,7 +3,9 @@
  * Google Apps Script ContentService 無法替 GitHub Pages 補 CORS header，
  * 因此前端改用 JSONP 讀取回應。
  */
-window.GASJsonp = (() => {
+(function () {
+  if (window.GASJsonp && typeof window.GASJsonp.request === 'function') return;
+
   let seq = 0;
 
   function request(action, params = {}, timeout = 15000) {
@@ -20,7 +22,9 @@ window.GASJsonp = (() => {
         else resolve(data);
       }
 
-      window[callbackName] = data => cleanup(null, data);
+      window[callbackName] = function (data) {
+        cleanup(null, data);
+      };
 
       const p = new URLSearchParams();
       p.set('action', action);
@@ -31,11 +35,20 @@ window.GASJsonp = (() => {
         p.set(key, String(value));
       });
 
-      script.onerror = () => cleanup(new Error('API 載入失敗，請確認 Apps Script Web App URL 與權限'));
-      script.src = `${window.APP_CONFIG.API_URL}?${p.toString()}`;
+      const baseUrl = (window.APP_CONFIG && window.APP_CONFIG.API_URL) || '';
+      if (!baseUrl) {
+        cleanup(new Error('尚未設定 Google Apps Script Web App URL'));
+        return;
+      }
+
+      script.onerror = function () {
+        cleanup(new Error('API 載入失敗，請確認 Apps Script Web App URL、部署版本與權限'));
+      };
+
+      script.src = baseUrl + '?' + p.toString();
       document.body.appendChild(script);
     });
   }
 
-  return { request };
+  window.GASJsonp = { request };
 })();
