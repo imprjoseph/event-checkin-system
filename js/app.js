@@ -144,6 +144,8 @@ function openDialog(icon, title, msg, confirmText, callback, isDanger) {
 function closeDialog() {
   document.getElementById('confirmDialog').classList.add('hidden');
   dialogConfirmCallback = null;
+  const opts = document.getElementById('dialogPickupOptions');
+  if (opts) { opts.classList.add('hidden'); opts.innerHTML = ''; }
 }
 
 function confirmAction() {

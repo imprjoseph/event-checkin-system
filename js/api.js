@@ -86,7 +86,7 @@ const API = (() => {
     return request('search', { keyword: keyword.trim(), field }, true);
   }
 
-  async function checkIn(guestId, staffName, method = 'qr') {
+  async function checkIn(guestId, staffName, method = 'qr', options = {}) {
     const token = window.Auth?.getToken?.() || '';
     for (const [key] of cache) {
       if (key.includes('dashboard') || key.includes('search')) cache.delete(key);
@@ -96,6 +96,8 @@ const API = (() => {
       guestId,
       staffName,
       method,
+      lunch: options.lunch ? 'true' : '',
+      gift: options.gift ? 'true' : '',
       timestamp: new Date().toISOString(),
     });
   }

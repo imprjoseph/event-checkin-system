@@ -70,6 +70,8 @@ const Search = (() => {
               <span class="badge-session">${escHtml(g.session || '—')}</span>
               <span class="badge-id">${escHtml(g.guestId || '')}</span>
               ${isChecked ? `<span class="badge-checked">✓ ${escHtml(g.checkinTime || '已報到')}</span>` : ''}
+              <span class="badge-pickup">中餐：${escHtml(g.lunchStatus || '未領取')}</span>
+              <span class="badge-pickup">伴手禮：${escHtml(g.giftStatus || '未領取')}</span>
             </div>
           </div>
           <div class="person-action">
@@ -93,6 +95,14 @@ const Search = (() => {
     document.getElementById('dialogIcon').textContent = '👤';
     document.getElementById('dialogTitle').textContent = '確認報到';
     document.getElementById('dialogMsg').textContent = `確定要完成 ${name} 的報到嗎？`;
+    const opts = document.getElementById('dialogPickupOptions');
+    if (opts) {
+      opts.classList.remove('hidden');
+      opts.innerHTML = `
+        <label><input type="checkbox" id="manualLunch" checked> 同步紀錄中餐</label>
+        <label><input type="checkbox" id="manualGift" checked> 同步紀錄伴手禮</label>
+      `;
+    }
     document.getElementById('btnConfirm').textContent = '✓ 確認報到';
     document.getElementById('btnConfirm').className = 'btn-confirm';
     document.getElementById('confirmDialog').classList.remove('hidden');
@@ -108,7 +118,11 @@ const Search = (() => {
     btn.disabled = true;
 
     try {
-      const result = await API.checkIn(pendingCheckinId, staffName, 'manual');
+      const options = {
+        lunch: !!document.getElementById('manualLunch')?.checked,
+        gift: !!document.getElementById('manualGift')?.checked,
+      };
+      const result = await API.checkIn(pendingCheckinId, staffName, 'manual', options);
 
       closeDialog();
 
