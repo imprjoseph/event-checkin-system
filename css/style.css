@@ -515,3 +515,166 @@ input { font-family: inherit; outline: none; border: none; }
   .login-card { padding: 48px 40px; }
   .main-content { max-width: 600px; margin: 0 auto; }
 }
+
+/* ============================================
+   imPR 品牌整合樣式
+   ============================================ */
+
+/* imPR 主題色 */
+:root {
+  --impr: #E8521A;
+  --impr-dim: rgba(232, 82, 26, 0.12);
+  --impr-border: rgba(232, 82, 26, 0.35);
+  --impr-hover: #FF6B35;
+}
+
+/* 登入頁 Logo */
+.impr-logo-img {
+  width: 100px;
+  height: auto;
+  display: block;
+  margin: 0 auto 14px;
+  filter: drop-shadow(0 2px 8px rgba(232,82,26,0.2));
+}
+
+/* 活動名稱 + 編輯按鈕 */
+.event-name-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.event-name-wrap h1 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0;
+}
+.edit-event-btn {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  padding: 3px 6px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--bg-elevated);
+  transition: all 0.2s;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.edit-event-btn:hover {
+  border-color: var(--impr-border);
+  color: var(--impr);
+  background: var(--impr-dim);
+}
+
+/* 頂部 Header Logo */
+.header-logo-img {
+  height: 22px;
+  width: auto;
+  opacity: 0.9;
+}
+
+/* 登入按鈕改 imPR 橘 */
+.btn-login {
+  background: var(--impr) !important;
+  color: #fff !important;
+}
+.btn-login:hover {
+  background: var(--impr-hover) !important;
+  box-shadow: 0 4px 16px rgba(232,82,26,0.35);
+}
+
+/* 登入卡片 logo 圖示動畫取消（已改為圖片）*/
+.logo-icon { display: none; }
+
+/* 活動名稱編輯 Input */
+.event-name-input {
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  font-family: var(--font-sans);
+  outline: none;
+  transition: border-color 0.2s;
+}
+.event-name-input:focus { border-color: var(--impr); }
+
+/* 底部導航 active 改 imPR 橘 */
+.nav-btn.active { color: var(--impr); }
+.nav-btn.active::before { background: var(--impr); }
+
+/* Header 計數器改 imPR 橘 */
+.checkin-counter {
+  background: var(--impr-dim);
+  border-color: var(--impr-border);
+}
+.counter-num { color: var(--impr); }
+.counter-label { color: var(--impr); }
+
+/* 掃描線改 imPR 橘 */
+.scan-line {
+  background: linear-gradient(90deg, transparent, var(--impr), transparent);
+}
+.scan-corner { border-color: var(--impr); }
+
+/* 主要按鈕改 imPR 橘 */
+.btn-primary {
+  background: var(--impr);
+  color: #fff;
+}
+.btn-primary:hover { background: var(--impr-hover); }
+
+/* 報到按鈕 */
+.btn-checkin {
+  background: var(--impr);
+  color: #fff;
+}
+.btn-checkin:hover { background: var(--impr-hover); }
+.btn-manual-checkin {
+  background: var(--impr);
+  color: #fff;
+}
+.btn-manual-checkin:hover { background: var(--impr-hover); }
+
+/* 進度條 */
+.progress-bar-fill {
+  background: linear-gradient(90deg, var(--impr), var(--impr-hover));
+}
+
+/* 確認按鈕 */
+.btn-confirm { background: var(--impr); color: #fff; }
+.btn-confirm:hover { background: var(--impr-hover); }
+
+/* 登入頁背景光暈改 imPR 色調 */
+.login-overlay::before {
+  background:
+    radial-gradient(ellipse 60% 50% at 20% 80%, rgba(232,82,26,0.07) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 60% at 80% 20%, rgba(232,82,26,0.04) 0%, transparent 70%);
+}
+
+/* Badge checked */
+.badge-checked { background: var(--impr-dim); color: var(--impr); }
+
+/* Search tab active */
+.search-tab.active {
+  background: var(--impr-dim);
+  border-color: var(--impr-border);
+  color: var(--impr);
+}
+
+/* stat-checked */
+.stat-checked .stat-number { color: var(--impr); }
+
+/* Log dot */
+.log-dot { background: var(--impr); }
+
+/* Toast success */
+.toast.success {
+  border-color: var(--impr);
+  color: var(--impr);
+  background: var(--impr-dim);
+}
