@@ -10,6 +10,7 @@ const Search = (() => {
   let currentField = 'all';
   let pendingCheckinId = null;
   let pendingCheckinName = null;
+  const guestMap = new Map();
 
   // ===== 防抖搜尋 =====
   function debounce(keyword) {
@@ -56,6 +57,9 @@ const Search = (() => {
       return;
     }
 
+    guestMap.clear();
+    guests.forEach(g => { if (g && g.guestId) guestMap.set(String(g.guestId), g); });
+
     const html = guests.map(g => {
       const isChecked = g.checkinStatus === '已報到';
       const nameChar = g.name ? g.name.charAt(0) : '?';
@@ -74,9 +78,10 @@ const Search = (() => {
             </div>
           </div>
           <div class="person-action">
+            <button class="btn-qr-serial" onclick="Search.openGuestQr('${escAttr(g.guestId || '')}')">QR／序號</button>
             ${isChecked
               ? `<button class="btn-already" title="已報到時間：${escHtml(g.checkinTime||'')}">已報到</button>`
-              : `<button class="btn-manual-checkin" onclick="Search.openCheckinConfirm('${g.guestId}','${escHtml(g.name)}')">報到</button>`
+              : `<button class="btn-manual-checkin" onclick="Search.openCheckinConfirm('${escAttr(g.guestId || '')}','${escAttr(g.name || '')}')">報到</button>`
             }
           </div>
         </div>
@@ -151,6 +156,45 @@ const Search = (() => {
     }
   }
 
+
+  // ===== 顯示與會者 QR Code / 序號 =====
+  function openGuestQr(guestId) {
+    const g = guestMap.get(String(guestId || ''));
+    if (!g) {
+      showToast('找不到此與會者資料，請重新搜尋', 'error');
+      return;
+    }
+
+    const modal = document.getElementById('guestQrModal');
+    const img = document.getElementById('guestQrImage');
+    const nameEl = document.getElementById('guestQrName');
+    const serialEl = document.getElementById('guestSerialCode');
+
+    const qrContent = JSON.stringify({
+      id: g.guestId || '',
+      name: g.name || '',
+      mobile: g.mobile || ''
+    });
+    const fallbackQrUrl = 'https://quickchart.io/qr?text=' + encodeURIComponent(qrContent) + '&size=240&format=png&margin=1';
+
+    if (nameEl) nameEl.textContent = [g.name, g.company].filter(Boolean).join('｜') || '與會者';
+    if (serialEl) serialEl.textContent = g.guestId || '—';
+    if (img) img.src = g.qrUrl || fallbackQrUrl;
+    if (modal) modal.classList.remove('hidden');
+  }
+
+  function copyGuestSerial() {
+    const serial = document.getElementById('guestSerialCode')?.textContent || '';
+    if (!serial || serial === '—') return;
+    navigator.clipboard?.writeText(serial)
+      .then(() => showToast('已複製序號：' + serial, 'success'))
+      .catch(() => showToast('請手動複製序號：' + serial, 'info'));
+  }
+
+  function closeGuestQrModal() {
+    document.getElementById('guestQrModal')?.classList.add('hidden');
+  }
+
   // ===== 清空搜尋 =====
   function clearSearch() {
     document.getElementById('searchInput').value = '';
@@ -187,7 +231,9 @@ const Search = (() => {
       .replace(/'/g, '&#39;');
   }
 
-  return { debounce, clearSearch, setField, openCheckinConfirm, doManualCheckin };
+  function escAttr(str) { return escHtml(str); }
+
+  return { debounce, clearSearch, setField, openCheckinConfirm, doManualCheckin, openGuestQr, copyGuestSerial, closeGuestQrModal };
 })();
 
 window.Search = Search;
@@ -196,3 +242,5 @@ window.Search = Search;
 function debounceSearch(val) { Search.debounce(val); }
 function clearSearch() { Search.clearSearch(); }
 function setSearchField(el, field) { Search.setField(el, field); }
+function closeGuestQrModal() { Search.closeGuestQrModal(); }
+function copyGuestSerial() { Search.copyGuestSerial(); }

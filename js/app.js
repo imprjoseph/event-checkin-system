@@ -82,7 +82,8 @@ function showApp(staffName) {
   const roleLabel = user?.role === 'superadmin' ? '⭐' :
                     user?.role === 'admin'       ? '🔑' : '👤';
   document.getElementById('headerStaffName').textContent = `${roleLabel} ${staffName}`;
-  document.getElementById('headerEventName').textContent = APP_CONFIG.EVENT.name;
+  document.getElementById('headerEventName').textContent = getCurrentEventName();
+  updatePickupOptionDisplays();
 
   // 管理員顯示後台入口連結
   if (Auth.can('canManageAccounts')) {
@@ -213,10 +214,29 @@ function initEventName() {
 }
 
 /** 更新所有顯示活動名稱的位置 */
+function getCurrentEventName() {
+  return (localStorage.getItem(EVENT_NAME_KEY) || APP_CONFIG.EVENT.name || '活動報到系統').trim();
+}
+
 function setEventNameDisplay(name) {
-  document.getElementById('eventTitle').textContent = name;
-  document.getElementById('headerEventName').textContent = name;
+  const titleEl = document.getElementById('eventTitle');
+  const headerEl = document.getElementById('headerEventName');
+  if (titleEl) titleEl.textContent = name;
+  if (headerEl) headerEl.textContent = name;
   document.title = name + ' 報到系統';
+  updatePickupOptionDisplays();
+}
+
+function updatePickupOptionDisplays() {
+  const pickup = getEventPickupOptions();
+  const selected = [];
+  if (pickup.lunch) selected.push('中餐');
+  if (pickup.gift) selected.push('伴手禮');
+  const text = selected.length ? '紀錄項目：' + selected.join('、') : '紀錄項目：無';
+  const loginEl = document.getElementById('eventPickupSummary');
+  const headerEl = document.getElementById('headerPickupSummary');
+  if (loginEl) loginEl.textContent = text;
+  if (headerEl) headerEl.textContent = text;
 }
 
 /** 開啟編輯對話框 */
@@ -302,12 +322,14 @@ function renderPickupStatusLine(data = {}) {
 }
 
 window.getEventPickupOptions = getEventPickupOptions;
+window.updatePickupOptionDisplays = updatePickupOptionDisplays;
 window.renderPickupOptionInputs = renderPickupOptionInputs;
 window.renderPickupStatusLine = renderPickupStatusLine;
 
 // DOMContentLoaded 時補充初始化
 document.addEventListener('DOMContentLoaded', () => {
   initEventName();
+  updatePickupOptionDisplays();
 });
 
 // ============================================
