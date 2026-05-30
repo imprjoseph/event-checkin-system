@@ -189,10 +189,10 @@ const Scanner = (() => {
     const statusEl = document.getElementById('resultStatusMsg');
     if (isChecked) {
       statusEl.innerHTML = `<span style="color:var(--warning)">⚠ 已於 ${guest.checkinTime || '—'} 報到（${guest.checkinStaff || '—'}）</span>
-        <div class="pickup-status-line">中餐：${pickupLabel(guest.lunchStatus)}　伴手禮：${pickupLabel(guest.giftStatus)}</div>`;
+        <div class="pickup-status-line">${renderPickupStatusLine({ lunchStatus: pickupLabel(guest.lunchStatus), giftStatus: pickupLabel(guest.giftStatus) })}</div>`;
     } else {
       statusEl.innerHTML = `<span style="color:var(--accent)">✓ 尚未報到，可完成報到</span>
-        <div class="pickup-status-line">可於報到時同步紀錄中餐與伴手禮</div>`;
+        <div class="pickup-status-line">${renderPickupStatusLine() ? '可於報到時同步紀錄' + renderPickupStatusLine().replace(/：未領取/g, '') : ''}</div>`;
     }
 
     // 操作按鈕
@@ -205,8 +205,7 @@ const Scanner = (() => {
     } else {
       actions.innerHTML = `
         <div class="pickup-options">
-          <label><input type="checkbox" id="scanLunch" checked> 中餐</label>
-          <label><input type="checkbox" id="scanGift" checked> 伴手禮</label>
+          ${renderPickupOptionInputs('scan')}
         </div>
         <button class="btn-checkin" onclick="Scanner.doCheckIn('${guest.guestId}')">
           ✓ 完成報到
@@ -243,7 +242,7 @@ const Scanner = (() => {
         const now = new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
         document.getElementById('resultStatusMsg').innerHTML =
           `<span style="color:var(--accent)">✓ 報到完成！${now} by ${staffName}</span>
-          <div class="pickup-status-line">中餐：${options.lunch ? '已領取' : '未領取'}　伴手禮：${options.gift ? '已領取' : '未領取'}</div>`;
+          <div class="pickup-status-line">${renderPickupStatusLine({ lunch: options.lunch ? '已領取' : '未領取', gift: options.gift ? '已領取' : '未領取' })}</div>`;
 
         // 更新按鈕
         document.getElementById('resultActions').innerHTML = `

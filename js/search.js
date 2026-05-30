@@ -70,8 +70,7 @@ const Search = (() => {
               <span class="badge-session">${escHtml(g.session || '—')}</span>
               <span class="badge-id">${escHtml(g.guestId || '')}</span>
               ${isChecked ? `<span class="badge-checked">✓ ${escHtml(g.checkinTime || '已報到')}</span>` : ''}
-              <span class="badge-pickup">中餐：${escHtml(g.lunchStatus || '未領取')}</span>
-              <span class="badge-pickup">伴手禮：${escHtml(g.giftStatus || '未領取')}</span>
+              ${renderSearchPickupBadges(g)}
             </div>
           </div>
           <div class="person-action">
@@ -87,6 +86,15 @@ const Search = (() => {
     container.innerHTML = html;
   }
 
+
+  function renderSearchPickupBadges(g) {
+    const pickup = getEventPickupOptions();
+    const badges = [];
+    if (pickup.lunch) badges.push(`<span class="badge-pickup">中餐：${escHtml(g.lunchStatus || '未領取')}</span>`);
+    if (pickup.gift) badges.push(`<span class="badge-pickup">伴手禮：${escHtml(g.giftStatus || '未領取')}</span>`);
+    return badges.join('');
+  }
+
   // ===== 打開確認對話框 =====
   function openCheckinConfirm(guestId, name) {
     pendingCheckinId = guestId;
@@ -98,10 +106,7 @@ const Search = (() => {
     const opts = document.getElementById('dialogPickupOptions');
     if (opts) {
       opts.classList.remove('hidden');
-      opts.innerHTML = `
-        <label><input type="checkbox" id="manualLunch" checked> 同步紀錄中餐</label>
-        <label><input type="checkbox" id="manualGift" checked> 同步紀錄伴手禮</label>
-      `;
+      opts.innerHTML = renderPickupOptionInputs('manual', '同步紀錄');
     }
     document.getElementById('btnConfirm').textContent = '✓ 確認報到';
     document.getElementById('btnConfirm').className = 'btn-confirm';

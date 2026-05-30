@@ -9,7 +9,7 @@
 const CONFIG = {
   // ===== 必填：Google Apps Script Web App URL =====
   // 部署 GAS 後取得，格式：https://script.google.com/macros/s/XXXXX/exec
-  API_URL: 'https://script.google.com/macros/s/AKfycbyV0bCmr-OoEtEelWks-AQ5LBggz0m0s7ij7N4WFN16hK7ihfcJkYG1Kf2u87sxm5gV/exec',
+  API_URL: 'https://script.google.com/macros/s/AKfycbx6Ain94ZjS51UV6F0Dl00Rh59B5pmzhdlZyhimrphd6AhtybkfvARtTMbEtXYNtm6o/exec',
 
   // ===== 活動基本資料 =====
   EVENT: {
@@ -18,6 +18,7 @@ const CONFIG = {
     date: '2026-03-15',                 // 活動日期
     venue: '台北國際會議中心',            // 場地
     sessions: ['上午場', '下午場', '全天'],  // 場次選項
+    pickupOptions: { lunch: true, gift: true }, // event 可選紀錄項目：中餐／伴手禮
   },
 
   // ===== 工作人員密碼 =====

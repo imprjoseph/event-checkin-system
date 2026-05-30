@@ -202,6 +202,7 @@ document.getElementById('confirmDialog').addEventListener('click', function(e) {
 // ============================================
 
 const EVENT_NAME_KEY = 'checkin_event_name';
+const EVENT_PICKUP_KEY = 'checkin_event_pickup_options';
 
 /** 初始化：從 localStorage 讀取自訂活動名稱 */
 function initEventName() {
@@ -223,6 +224,13 @@ function openEventEditor() {
   const current = document.getElementById('eventTitle').textContent;
   const input = document.getElementById('newEventName');
   input.value = current === '活動報到系統' ? '' : current;
+
+  const pickup = getEventPickupOptions();
+  const lunchEl = document.getElementById('eventOptionLunch');
+  const giftEl = document.getElementById('eventOptionGift');
+  if (lunchEl) lunchEl.checked = !!pickup.lunch;
+  if (giftEl) giftEl.checked = !!pickup.gift;
+
   document.getElementById('eventEditorModal').classList.remove('hidden');
   setTimeout(() => input.focus(), 80);
   input.addEventListener('keydown', function handler(e) {
@@ -246,10 +254,56 @@ function saveEventName() {
     return;
   }
   localStorage.setItem(EVENT_NAME_KEY, name);
+  localStorage.setItem(EVENT_PICKUP_KEY, JSON.stringify({
+    lunch: !!document.getElementById('eventOptionLunch')?.checked,
+    gift: !!document.getElementById('eventOptionGift')?.checked,
+  }));
   setEventNameDisplay(name);
   closeEventEditor();
-  showToast('✅ 活動名稱已更新', 'success');
+  showToast('✅ 活動設定已更新', 'success');
 }
+
+/** 讀取 event 紀錄項目設定 */
+function getEventPickupOptions() {
+  const defaults = (window.APP_CONFIG && APP_CONFIG.EVENT && APP_CONFIG.EVENT.pickupOptions) || { lunch: true, gift: true };
+  try {
+    const saved = JSON.parse(localStorage.getItem(EVENT_PICKUP_KEY) || 'null');
+    if (saved && typeof saved === 'object') {
+      return {
+        lunch: saved.lunch !== false,
+        gift: saved.gift !== false,
+      };
+    }
+  } catch (err) {
+    // ignore invalid localStorage
+  }
+  return {
+    lunch: defaults.lunch !== false,
+    gift: defaults.gift !== false,
+  };
+}
+
+/** 產生中餐／伴手禮勾選 HTML */
+function renderPickupOptionInputs(prefix, labelPrefix = '') {
+  const pickup = getEventPickupOptions();
+  const items = [];
+  if (pickup.lunch) items.push(`<label><input type="checkbox" id="${prefix}Lunch" checked> ${labelPrefix}中餐</label>`);
+  if (pickup.gift) items.push(`<label><input type="checkbox" id="${prefix}Gift" checked> ${labelPrefix}伴手禮</label>`);
+  return items.join('');
+}
+
+/** 產生中餐／伴手禮狀態文字 */
+function renderPickupStatusLine(data = {}) {
+  const pickup = getEventPickupOptions();
+  const items = [];
+  if (pickup.lunch) items.push(`中餐：${data.lunch || data.lunchStatus || '未領取'}`);
+  if (pickup.gift) items.push(`伴手禮：${data.gift || data.giftStatus || '未領取'}`);
+  return items.length ? items.join('　') : '';
+}
+
+window.getEventPickupOptions = getEventPickupOptions;
+window.renderPickupOptionInputs = renderPickupOptionInputs;
+window.renderPickupStatusLine = renderPickupStatusLine;
 
 // DOMContentLoaded 時補充初始化
 document.addEventListener('DOMContentLoaded', () => {

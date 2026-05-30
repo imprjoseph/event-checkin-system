@@ -725,3 +725,30 @@ input { font-family: inherit; outline: none; border: none; }
   color: var(--text-secondary, #9aa4b2);
   font-size: .75rem;
 }
+
+/* Event editor pickup options */
+.event-option-group {
+  margin: 4px 0 18px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(255,255,255,.04);
+  text-align: left;
+}
+.event-option-title {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.event-option-group label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 16px;
+  font-size: 15px;
+  cursor: pointer;
+}
+.event-option-group input {
+  width: 17px;
+  height: 17px;
+}
